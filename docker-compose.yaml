@@ -1,0 +1,25 @@
+version: '3.7'
+services:
+  envoy:
+    build:
+      context: .
+      dockerfile: Dockerfile-envoy
+    ports:
+    - "10000:10000"
+  
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile-app
+
+  prometheus:
+    image: prom/prometheus:v2.30.3
+    ports:
+      - 9000:9090
+    volumes:
+      - ./config/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    command: --web.enable-lifecycle  --config.file=/etc/prometheus/prometheus.yaml
+
+volumes:
+  prometheus-data:

@@ -1,0 +1,16 @@
+# TODO: implement prod-cert tag using a certificate from lets encrypt
+
+FROM alpine/openssl:latest AS dev-cert
+RUN openssl req -x509 -newkey rsa:4096 -keyout /etc/server.key -out /etc/server.crt -days 365 -nodes -subj "/OU=acme/CN=${USER}/ST=Random/C=US/CN=echod"
+
+FROM envoyproxy/envoy-dev:latest
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y curl ca-certificates \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /tmp/* /var/tmp/* /var/lib/apt/lists/*
+COPY ./config/envoy/envoy.yaml /etc/envoy.yaml
+COPY --from=dev-cert /etc/server.key /etc/server.key
+COPY --from=dev-cert /etc/server.crt /etc/server.crt
+RUN chmod go+r /etc/envoy.yaml && chmod 644 /etc/server.key
+CMD ["/usr/local/bin/envoy", "-c /etc/envoy.yaml"]
