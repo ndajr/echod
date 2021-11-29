@@ -18,19 +18,16 @@ import (
 var (
 	totalRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name:        "http_requests_total",
-			Help:        "Number of total requests by status code, method and path",
-			ConstLabels: prometheus.Labels{"service": "echod"},
+			Name: "http_requests_total",
+			Help: "Number of total requests by status code, method and path",
 		},
 		[]string{"status", "method", "path"},
 	)
-	requestDuration = prometheus.NewHistogramVec(
+	requestDuration = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Name:        "http_request_duration_seconds",
-			Help:        "Duration of all HTTP requests by status code, method and path.",
-			ConstLabels: prometheus.Labels{"service": "echod"},
+			Name: "http_request_duration_milliseconds",
+			Help: "Duration of all HTTP requests",
 		},
-		[]string{"status_code", "method", "path"},
 	)
 )
 
@@ -70,8 +67,9 @@ func statsMiddleware(c *fiber.Ctx) error {
 		Str("status", status),
 	).Msg(fmt.Sprintf("%s %s %s", method, path, c.Protocol()))
 	totalRequests.WithLabelValues(status, method, path).Inc()
-	elapsed := float64(time.Since(start).Seconds())
-	requestDuration.WithLabelValues(status, method, path).Observe(elapsed)
+	elapsed := float64(time.Since(start).Nanoseconds()) / 1000000
+	c.Append("X-Response-Time", fmt.Sprintf("%.2fms", elapsed))
+	requestDuration.Observe(elapsed)
 	return nil
 }
 

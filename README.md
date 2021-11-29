@@ -1,5 +1,8 @@
 # echod
-Echod is an HTTP server which echoes whatever JSON a client sent through the API appending `"echoed": true`. This is a demo project to demonstrate an API built in Go with logs, metrics, unit and integration tests. I decided to also include Envoy as an HTTPS proxy (for demonstration purposes) and Prometheus on the docker-compose.yaml. If you want to run just the service with docker, you can do so with `make dockerrun`
+Echod is an HTTP server which echoes whatever JSON a client sent through the API appending `"echoed": true`. This is a demo project to demonstrate an API built in Go with logs, metrics, unit and integration tests. I decided to also include Envoy as an HTTPS proxy (for demonstration purposes) and Prometheus on the docker-compose.yaml. If you want to run just the service with docker, you can do so with `make dockerrun`.
+
+> Deploying something useless into production, as soon as you can, is the right way to start a new project. It pulls unknown risk forward, opens up parallel streams of work, and establishes good habits.
+> https://blog.thepete.net/blog/2019/10/04/hello-production/
 
 The API consists on the following endpoints:
 - POST /api/echo (requires [Authentication](#authentication))
@@ -22,9 +25,7 @@ Running the tests ([Go](https://go.dev/dl/) is required):
 make test
 ```
 
-Running the lints:
-Pre-requisites:
-- [golangci-lint](https://golangci-lint.run/usage/install/#local-installation)
+Running the lints ([golangci-lint](https://golangci-lint.run/usage/install/#local-installation) is required):
 ```bash
 make lint
 ```
@@ -73,7 +74,16 @@ Transfer/sec:     12.80MB
 ## Monitoring
 Echod exposes two metrics on Prometheus format:
 - `http_requests_total`: Measures the total http requests received labeled by status code, method and path (Counter).
-- `http_request_duration_seconds`: Measures the duration of each http request labeled by status code, method and path (Histogram)
+- `http_request_duration_milliseconds`: Measures the duration of each http request (Histogram).
 
-Alerts:
-- `InstanceDown`: triggered when the service is down for more than 5 minutes.
+### Alerts
+For more information, check [alerts.yaml](config/prometheus/alerts.yaml). You can run `make run` and access Prometheus on `http://localhost:9000/`.
+
+##### Envoy
+- `InstanceDown`: triggers when Envoy is down for more than 1 minute.
+
+##### Echod
+- `InstanceDown`: triggers when the service is down for more than 5 minutes.
+- `HighRequestLatency`: triggers when the average requests duration is longer than 500ms.
+- `HttpLatency99Percentile`: triggers when 1% of the slowest requests are longer than 1s.
+- `HttpHigh5xxErrorRate`: triggers when 5% of the requests are HTTP 5xx responses.
