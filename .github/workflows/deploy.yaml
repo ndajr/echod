@@ -40,7 +40,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/master' }}
         with:
           context: ./
-          file: ./Dockerfile-envoy
+          file: ./Dockerfile-app
           push: true
           tags: neemiasjnr/echod:latest
 
